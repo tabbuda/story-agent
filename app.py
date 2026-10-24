@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-from groq import Groq, RateLimitError, NotFoundException, APIStatusError
+from groq import Groq
 
 # ─────────────────────────────────────────────────────────
 # PAGE SETUP
@@ -20,7 +20,7 @@ st.caption("Raw, explicit, bebaak kahaniyan - bilkul insaan ki tarah. Koi filter
 api_key = st.secrets.get("GROQ_API_KEY", None)
 
 # ─────────────────────────────────────────────────────────
-# LIVE MODELS (Oct 2026) - dead models hata diye
+# LIVE MODELS (Oct 2026)
 # ─────────────────────────────────────────────────────────
 LIVE_MODELS = [
     "openai/gpt-oss-120b",   # best quality
@@ -84,7 +84,10 @@ col3, col4 = st.columns(2)
 
 with col3:
     unfiltered_mode = st.toggle("🔥 Unfiltered Mode", value=True)
-    length = st.selectbox("Length:", ["Short (~1500 words)", "Medium (~3000 words)", "Long (~5000 words)"])
+    length = st.selectbox(
+        "Length:",
+        ["Short (~1500 words)", "Medium (~3000 words)", "Long (~5000 words)"],
+    )
 
 with col4:
     model_choice = st.selectbox("Model:", ["Auto (best available)"] + LIVE_MODELS)
@@ -134,18 +137,22 @@ def generate_story(api_key, system, user, model_choice, temp, tokens):
                     return content, model_name, errors
                 errors.append(f"{model_name}: content khaali aaya (max_tokens badhao)")
                 break
-            except RateLimitError:
-                errors.append(f"{model_name}: rate limit (429) - wait")
-                time.sleep(8 * (attempt + 1))
-            except NotFoundException:
-                errors.append(f"{model_name}: model not found (dead)")
-                break
-            except APIStatusError as e:
-                errors.append(f"{model_name}: API {e.status_code} - {e.message}")
-                break
             except Exception as e:
-                errors.append(f"{model_name}: {type(e).__name__} - {e}")
-                break
+                status = getattr(e, "status_code", None)
+                cname = type(e).__name__
+
+                if status == 429 or "RateLimit" in cname:
+                    errors.append(f"{model_name}: rate limit (429) - wait")
+                    time.sleep(8 * (attempt + 1))
+                elif status == 404 or "NotFound" in cname:
+                    errors.append(f"{model_name}: model not found (dead)")
+                    break
+                elif status == 401 or "Auth" in cname:
+                    errors.append(f"{model_name}: API key galat (401)")
+                    break
+                else:
+                    errors.append(f"{model_name}: {cname} - {e}")
+                    break
     return None, None, errors
 
 
