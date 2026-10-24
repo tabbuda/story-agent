@@ -5,10 +5,10 @@ import json
 import streamlit as st
 from groq import Groq
 
-st.set_page_config(page_title="YouTube + Web Search Story Agent", page_icon="🎬", layout="centered")
+st.set_page_config(page_title="Urdu-Touch Hindi Blog Generator", page_icon="✒️", layout="centered")
 
-st.title("🎬 YouTube + Google/Web Search Original Story Agent")
-st.write("किसी भी YouTube वीडियो का लिंक डालें — यह एजेंट वीडियो को समझेगा, इंटरनेट पर नया असली डेटा (Original Facts) खोजेगा और एक 100% नई कहानी लिखेगा!")
+st.title("✒️ YouTube to Urdu-Touch Blog Post Agent")
+st.write("लिखावट देवनागरी (हिंदी) में, लेकिन लफ़्ज़, उच्चारण और कशिश ख़ूबसूरत उर्दू टच (Hindustani/Rekhta) में — ताकि पढ़ने वाला आख़िरी सतर तक बंधा रहे!")
 
 api_key = st.secrets.get("GROQ_API_KEY")
 
@@ -63,7 +63,6 @@ def get_youtube_info(video_id: str):
 
 def search_web_facts(query: str):
     results_text = []
-    # Method 1: Try duckduckgo-search if installed
     try:
         from duckduckgo_search import DDGS
         with DDGS() as ddgs:
@@ -74,11 +73,10 @@ def search_web_facts(query: str):
     except Exception:
         pass
 
-    # Method 2: Built-in Wikipedia / Web API search (Zero extra packages needed)
     try:
         encoded_q = urllib.parse.quote(query)
         wiki_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={encoded_q}&utf8=&format=json"
-        req = urllib.request.Request(wiki_url, headers={"User-Agent": "StoryAgent/1.0"})
+        req = urllib.request.Request(wiki_url, headers={"User-Agent": "BlogAgent/1.0"})
         with urllib.request.urlopen(req, timeout=8) as resp:
             wdata = json.loads(resp.read().decode("utf-8", errors="ignore"))
             for item in wdata.get("query", {}).get("search", [])[:4]:
@@ -95,21 +93,21 @@ yt_url = st.text_input(
 )
 
 custom_angle = st.text_input(
-    "🎯 कोई खास एंगल या निर्देश (Optional):",
-    placeholder="जैसे: इसके अनसुने रहस्य और असली तारीखों पर ज़्यादा फोकस करें..."
+    "🎯 ब्लॉग पोस्ट का ख़ास पहलू या निर्देश (Optional):",
+    placeholder="जैसे: इसके छुपे हुए राज़ और जज़्बाती पहलू पर ज़्यादा ज़ोर दें..."
 )
 
-genre = st.selectbox(
-    "कहानी का अंदाज़ चुनें:",
+blog_style = st.selectbox(
+    "ब्लॉग का अंदाज़ (Style) चुनें:",
     [
-        "डॉक्यूमेंट्री थ्रिलर और सच्ची घटना (Real-Data Thriller Story)",
-        "रहस्य और इन्वेस्टिगेटिव थ्रिलर (Mystery & Investigation)",
-        "सिनेमाई यूट्यूब स्क्रिप्ट स्टोरी (Cinematic YouTube Story Script)",
-        "रोचक और मज़ेदार अंदाज़ (Engaging Infotainment Story)"
+        "दास्तानगोई और पुरकशिश ब्लॉग पोस्ट (Magnetic Urdu-Touch Blog Post)",
+        "तहक़ीक़ात और राज़नामा ब्लॉग (Investigative Mystery Blog Post)",
+        "जज़्बाती और रूहानी अफ़साना ब्लॉग (Soulful & Deep Feature Post)",
+        "तेज़-तर्रार वायरल ब्लॉग पोस्ट (High-Retention Viral Reader Post)"
     ]
 )
 
-if st.button("वीडियो देखें + वेब सर्च करें + नई कहानी बनाएँ", type="primary"):
+if st.button("✒️ उर्दू-टच हिंदी ब्लॉग पोस्ट तैयार करें", type="primary"):
     if not yt_url.strip():
         st.warning("कृपया पहले YouTube वीडियो का लिंक डालें!")
     elif not api_key:
@@ -119,61 +117,82 @@ if st.button("वीडियो देखें + वेब सर्च कर
         if not vid_id:
             st.error("कृपया सही YouTube लिंक डालें!")
         else:
-            with st.spinner("स्टेप 1/3: YouTube वीडियो और उसका विवरण पढ़ा जा रहा है..."):
+            with st.spinner("स्टेप 1/3: YouTube वीडियो के मौज़ू (Topic) को समझा जा रहा है..."):
                 v_title, v_author, v_context = get_youtube_info(vid_id)
                 st.info(f"📺 **वीडियो मिला:** {v_title} ({v_author})")
 
-            with st.spinner("स्टेप 2/3: इंटरनेट से इस विषय पर नया असली डेटा (Original Facts) खोजा जा रहा है..."):
+            with st.spinner("स्टेप 2/3: इंटरनेट से इस मौज़ू पर असली हक़ीक़त और सबूत खोजे जा रहे हैं..."):
                 web_facts = search_web_facts(v_title)
 
-            with st.spinner("स्टेप 3/3: असली डेटा के आधार पर नई ओरिजिनल कहानी लिखी जा रही है..."):
+            with st.spinner("स्टेप 3/3: उर्दू लफ़्ज़ों की चाशनी और देवनागरी लिखावट में ब्लॉग पोस्ट लिखा जा रहा है..."):
                 try:
                     client = Groq(api_key=api_key)
-                    prompt = f"""तुम एक बेहतरीन इन्वेस्टिगेटिव लेखक और कहानीकार हो।
-नीचे एक YouTube वीडियो की जानकारी और इंटरनेट सर्च से निकाले गए असली तथ्य दिए गए हैं:
 
-YouTube Video Title: {v_title} (by {v_author})
-Video Details / Transcript:
-{v_context if v_context else "वीडियो के शीर्षक और विषय का उपयोग करें।"}
+                    system_persona = """तुम एक मशहूर अदीब, दास्तानगो और बेहद कामयाब ब्लॉग राइटर हो।
+तुम्हें ऐसा Blog Post लिखना है जिसकी **लिखावट (Script) तो देवनागरी (हिंदी अक्षरों में) हो**, लेकिन **उच्चारण (Pronunciation), अल्फ़ाज़ और लहजा ख़ूबसूरत उर्दू टच (Hindustani / Rekhta Touch)** वाला हो।
+
+सख़्त भाषाई नियम:
+1. कठिन या किताबी संस्कृतनिष्ठ हिंदी शब्दों का इस्तेमाल बिल्कुल मत करो!
+   - 'प्रारंभ' की जगह -> 'आग़ाज़' या 'शुरुआत'
+   - 'रहस्य' की जगह -> 'राज़' या 'तिलिस्म'
+   - 'वास्तविकता/सत्य' की जगह -> 'हक़ीक़त'
+   - 'आश्चर्यजनक' की जगह -> 'हैरतअंगेज़'
+   - 'दृश्य' की जगह -> 'मंज़र'
+   - 'समय/प्रतीक्षा' की जगह -> 'वक़्त / इंतज़ार'
+   - 'भावनाएं' की जगह -> 'जज़्बात / एहसास'
+   - 'निष्कर्ष' की जगह -> 'अंजाम / लबो-लुबाब'
+   - 'महत्वपूर्ण' की जगह -> 'अहम / ग़ौरतलब'
+2. उर्दू शब्दों में सही जगह नुक़्ता (क़, ख़, ग़, ज़, फ़) ज़रूर लगाओ ताकि पढ़ने वाले का उच्चारण (Pronounce) अपने आप उर्दू टच वाला निकले।
+3. ब्लॉग की शुरुआत ऐसी जादुई लाइन (Hook) से करो कि पाठक पूरा पोस्ट पढ़े बिना पेज बंद न कर सके।"""
+
+                    user_prompt = f"""YouTube Video Title: {v_title} (by {v_author})
+Video Details / Context:
+{v_context if v_context else "वीडियो के शीर्षक और मौज़ू का उपयोग करें।"}
 
 Internet Search Original Data:
-{web_facts if web_facts else "इस विषय से जुड़े प्रमाणिक ऐतिहासिक और वैज्ञानिक तथ्यों का उपयोग करें।"}
+{web_facts if web_facts else "इस मौज़ू से जुड़े असली ऐतिहासिक और सच्चे तथ्यों का उपयोग करें।"}
 
-चुनी गई शैली: {genre}
-विशेष निर्देश: {custom_angle}
+चुना गया ब्लॉग अंदाज़: {blog_style}
+ख़ास निर्देश: {custom_angle}
 
-अब तीन भागों में सरल और रोचक हिंदी में उत्तर दें:
-1. **📺 वीडियो का सार (Video Summary):** वीडियो किस बारे में है (2-3 लाइन)।
-2. **🔍 खोजे गए असली तथ्य (Original Data & Facts):** इस विषय से जुड़े 4-5 मुख्य सच्चे और रोचक तथ्य।
-3. **📖 नई ओरिजिनल कहानी (Original Story):** वीडियो की नकल करने के बजाय इन असली तथ्यों के आधार पर एक बिल्कुल नई, रोचक और सिनेमाई हिंदी कहानी लिखें।"""
+अब देवनागरी लिपि में लेकिन **ख़ूबसूरत उर्दू टच और उच्चारण** के साथ एक मुकम्मल, वायरल **Blog Post** तैयार करें जिसमें ये हिस्से हों:
+1. **🔥 सुर्ख़ी (Catchy Headline) और उप-शीर्षक (Sub-headline):** जिसे देखते ही लोग पढ़ने पर मजबूर हो जाएं।
+2. **✨ आग़ाज़-ए-दास्तान (Magnetic Opening Hook):** जो पाठक के दिल और दिमाग़ को बांध ले।
+3. **🔍 तहक़ीक़ात और असली हक़ीक़त (Original Facts & Evidence):** इंटरनेट से मिले 4-5 सच्चे और हैरतअंगेज़ पहलू।
+4. **📖 मुकम्मल ब्लॉग पोस्ट (Main Blog Article with Subheadings):** 4-5 दिलकश पैराग्राफ और सब-हेडिंग्स में पूरी दास्तान।
+5. **💬 अंजाम और आपका ख़याल (Closing Thought & Question for Readers):** अंत में पाठकों से कमेंट कराने के लिए एक गहरा सवाल।"""
 
                     preferred_models = [
                         "meta-llama/llama-4-scout-17b-16e-instruct",
-                        "llama-3.1-8b-instant",
                         "openai/gpt-oss-120b",
+                        "llama-3.1-8b-instant",
                         "openai/gpt-oss-20b"
                     ]
-                    story_output = None
+                    blog_output = None
                     last_err = None
 
                     for m in preferred_models:
                         try:
                             resp = client.chat.completions.create(
                                 model=m,
-                                messages=[{"role": "user", "content": prompt}],
-                                temperature=0.75,
+                                messages=[
+                                    {"role": "system", "content": system_persona},
+                                    {"role": "user", "content": user_prompt}
+                                ],
+                                temperature=0.82,
+                                top_p=0.95,
                             )
-                            story_output = resp.choices[0].message.content
-                            if story_output:
+                            blog_output = resp.choices[0].message.content
+                            if blog_output:
                                 break
                         except Exception as err:
                             last_err = err
                             continue
 
-                    if story_output:
-                        st.success("🎉 नई ओरिजिनल कहानी तैयार है! 👇")
-                        st.markdown(story_output)
+                    if blog_output:
+                        st.success("✒️ आपका उर्दू-टच हिंदी ब्लॉग पोस्ट तैयार है! 👇")
+                        st.markdown(blog_output)
                     else:
-                        st.error(f"कहानी जनरेट करने में समस्या आई: {last_err}")
+                        st.error(f"ब्लॉग पोस्ट बनाने में समस्या आई: {last_err}")
                 except Exception as e:
                     st.error(f"एरर आया: {e}")
